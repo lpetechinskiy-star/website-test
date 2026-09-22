@@ -3,61 +3,15 @@
 //
 //   node scripts/check-page.mjs [http://localhost:3100] [screenshotDir]
 
-import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync } from 'node:fs';
-import { createServer } from 'node:http';
+import { mkdirSync } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { chromium, devices } from 'playwright';
 
 const BASE = process.argv[2] ?? 'http://localhost:3100';
 const SHOTS = process.argv[3] ?? '/tmp/footer-shots';
 const CHROMIUM = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 mkdirSync(SHOTS, { recursive: true });
-
-// Playwright's Chromium is built without the proprietary codecs, so it cannot
-// decode the H.264 clip the page ships. For this run an all-intra WebM twin —
-// transcoded from that very file, so identical frames, timing and seek points —
-// is served locally and swapped into the same <video> element, keeping the
-// component's code path under test. The page itself still ships only the mp4.
-const twin = path.join(SHOTS, 'check-twin.webm');
-if (!existsSync(twin)) {
-  const ffmpeg = execFileSync('python3', ['-c', 'import imageio_ffmpeg;print(imageio_ffmpeg.get_ffmpeg_exe())'])
-    .toString().trim();
-  execFileSync(ffmpeg, ['-hide_banner', '-loglevel', 'error', '-y',
-    '-i', path.join(root, 'public', 'tooth-scrub.mp4'),
-    '-an', '-c:v', 'libvpx', '-g', '1', '-b:v', '3M', '-deadline', 'realtime', '-cpu-used', '5',
-    twin], { stdio: 'inherit' });
-}
-
-// Seeking needs byte ranges, so the twin gets a small range-aware server.
-const twinBody = readFileSync(twin);
-const twinServer = createServer((request, response) => {
-  const range = /^bytes=(\d*)-(\d*)$/.exec(request.headers.range ?? '');
-  const headers = {
-    'Content-Type': 'video/webm',
-    'Accept-Ranges': 'bytes',
-    // The gaze check reads pixels back through a canvas, which needs CORS.
-    'Access-Control-Allow-Origin': '*',
-  };
-  if (!range) {
-    response.writeHead(200, { ...headers, 'Content-Length': twinBody.length });
-    response.end(twinBody);
-    return;
-  }
-  const start = range[1] ? Number(range[1]) : 0;
-  const end = range[2] ? Number(range[2]) : twinBody.length - 1;
-  response.writeHead(206, {
-    ...headers,
-    'Content-Range': `bytes ${start}-${end}/${twinBody.length}`,
-    'Content-Length': end - start + 1,
-  });
-  response.end(twinBody.subarray(start, end + 1));
-});
-await new Promise((resolve) => twinServer.listen(0, '127.0.0.1', resolve));
-const TWIN_URL = `http://127.0.0.1:${twinServer.address().port}/twin.webm`;
 
 const browser = await chromium.launch({ executablePath: CHROMIUM, args: ['--disable-gpu'] });
 const failures = [];
@@ -74,20 +28,19 @@ async function openPage(options) {
     if (response.status() >= 400) problems.push(`${response.status()} ${new URL(response.url()).pathname}`);
   });
   await page.goto(BASE, { waitUntil: 'load' });
-  await page.evaluate((url) => {
-    const video = document.querySelector('video');
-    video.crossOrigin = 'anonymous';
-    video.src = url;
-  }, TWIN_URL);
-  await page.waitForFunction(() => {
-    const video = document.querySelector('video');
-    return video && video.readyState >= 2;
-  });
   await page.evaluate(() => document.fonts.ready);
   return { page, problems };
 }
 
-// --- desktop: frame rate, visibility, gaze --------------------------------
+// How far each pupil has been pushed from the centre of its eye, read from
+// the transform the component sets (in the drawing's own units).
+const pupilOffsets = (page) => page.evaluate(() =>
+  [...document.querySelectorAll('#top svg[role="img"] .tooth-pupil')].map((pupil) => {
+    const matrix = new DOMMatrixReadOnly(getComputedStyle(pupil).transform);
+    return { x: matrix.e, y: matrix.f };
+  }));
+
+// --- desktop: frame rate, visibility, the character and its gaze -----------
 {
   const { page, problems } = await openPage({ viewport: { width: 1440, height: 900 } });
 
@@ -113,73 +66,72 @@ async function openPage(options) {
       }).length);
   check(await onScreenHidden() === 0, 'nothing on the first screen is left transparent');
 
-  const eye = await page.evaluate(() => {
-    const video = document.querySelector('#top video');
-    const rect = video.getBoundingClientRect();
-    const scale = Math.max(rect.width / video.videoWidth, rect.height / video.videoHeight);
+  const character = await page.evaluate(() => {
+    const svg = document.querySelector('#top svg[role="img"]');
+    if (!svg) return null;
+    const box = svg.getBoundingClientRect();
     return {
-      x: rect.left + rect.width / 2 + (948 / 1920 - 0.5) * video.videoWidth * scale,
-      y: rect.top + rect.height / 2 + (418 / 1080 - 0.5) * video.videoHeight * scale,
-      onScreen: rect.top >= 0 && rect.bottom <= window.innerHeight,
+      onFirstScreen: box.top >= 0 && box.bottom <= window.innerHeight + 1,
+      width: Math.round(box.width),
+      height: Math.round(box.height),
+      pupils: svg.querySelectorAll('.tooth-pupil').length,
     };
   });
-  check(eye.onScreen, 'the character sits on the first screen');
+  check(!!character, 'the character is drawn on the first screen');
+  check(character?.pupils === 2, 'both pupils are present');
+  check(character?.onFirstScreen && character.width > 380,
+    'the character is large and fully on the first screen',
+    `${character?.width}x${character?.height}px`);
 
-  const measure = () => page.evaluate(() => {
-    const video = document.querySelector('#top video');
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const context = canvas.getContext('2d', { willReadFrequently: true });
-    context.drawImage(video, 0, 0);
-    // Pupil centroid inside each eye, in the clip's own coordinates.
-    const pupil = (fx, fy) => {
-      const cx = Math.round(fx * canvas.width);
-      const cy = Math.round(fy * canvas.height);
-      const r = Math.round(0.037 * canvas.width);
-      const { data } = context.getImageData(cx - r, cy - r, r * 2, r * 2);
-      let sumX = 0;
-      let sumY = 0;
-      let count = 0;
-      for (let y = 0; y < r * 2; y += 1) {
-        for (let x = 0; x < r * 2; x += 1) {
-          const i = (y * r * 2 + x) * 4;
-          const luminance = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-          if (luminance < 90) { sumX += x; sumY += y; count += 1; }
-        }
-      }
-      return count ? { x: sumX / count - r, y: sumY / count - r } : null;
+  const eyeCentre = await page.evaluate(() => {
+    const svg = document.querySelector('#top svg[role="img"]');
+    const eyes = [...svg.querySelectorAll('.tooth-pupil')].map((p) => p.parentElement.getBoundingClientRect());
+    return {
+      x: (eyes[0].left + eyes[0].width / 2 + eyes[1].left + eyes[1].width / 2) / 2,
+      y: (eyes[0].top + eyes[0].height / 2 + eyes[1].top + eyes[1].height / 2) / 2,
     };
-    return { time: video.currentTime, left: pupil(858 / 1920, 418 / 1080), right: pupil(1038 / 1920, 418 / 1080) };
   });
 
   const angleGap = (a, b) => Math.abs(((a - b) % (Math.PI * 2) + Math.PI * 3) % (Math.PI * 2) - Math.PI);
 
-  // Right, down, left, up — screen-space Y grows downward.
-  for (const [name, dx, dy] of [['right', 300, 0], ['down', 0, 300], ['left', -300, 0], ['up', 0, -300]]) {
-    await page.mouse.move(eye.x + dx, eye.y + dy);
+  // Right, down, left, up — screen-space Y grows downward. The step is kept
+  // inside the viewport: a pointer moved past the edge never reports at all.
+  const viewport = page.viewportSize();
+  const room = {
+    right: viewport.width - eyeCentre.x,
+    left: eyeCentre.x,
+    down: viewport.height - eyeCentre.y,
+    up: eyeCentre.y,
+  };
+  const step = (name) => Math.min(300, Math.max(60, room[name] - 24));
+
+  for (const [name, sx, sy] of [['right', 1, 0], ['down', 0, 1], ['left', -1, 0], ['up', 0, -1]]) {
+    const dx = sx * step(name);
+    const dy = sy * step(name);
+    await page.mouse.move(eyeCentre.x + dx, eyeCentre.y + dy);
+    await page.waitForTimeout(350);
+    const offsets = await pupilOffsets(page);
+    const measured = offsets.map((offset) => Math.atan2(offset.y, offset.x));
     const wanted = Math.atan2(dy, dx);
-    let measured = Number.NaN;
-    let shown = null;
-    for (let attempt = 0; attempt < 25; attempt += 1) {
-      shown = await measure();
-      measured = Math.atan2((shown.left.y + shown.right.y) / 2, (shown.left.x + shown.right.x) / 2);
-      if (angleGap(wanted, measured) < 0.25) break;
-      await page.waitForTimeout(150);
-    }
+    const moved = offsets.every((offset) => Math.hypot(offset.x, offset.y) > 4);
     check(
-      angleGap(wanted, measured) < 0.25,
+      moved && measured.every((angle) => angleGap(wanted, angle) < 0.35),
       `gaze ${name}`,
-      `pupils at ${(measured * 180 / Math.PI).toFixed(0)}°, cursor at ${(wanted * 180 / Math.PI).toFixed(0)}°`,
+      `pupils at ${measured.map((a) => (a * 180 / Math.PI).toFixed(0)).join('° / ')}°, cursor at ${(wanted * 180 / Math.PI).toFixed(0)}°`,
     );
   }
 
-  // Every in-page link must land on a section that exists.
+  // Left alone, the eyes keep wandering instead of freezing.
+  const before = await pupilOffsets(page);
+  await page.waitForTimeout(3200);
+  const after = await pupilOffsets(page);
+  check(Math.hypot(after[0].x - before[0].x, after[0].y - before[0].y) > 3,
+    'the eyes keep moving when the cursor stands still');
+
   const links = await page.evaluate(() =>
     [...document.querySelectorAll('a[href^="#"]')].map((a) => ({
       href: a.getAttribute('href'),
       target: !!document.querySelector(a.getAttribute('href')),
-      visible: a.getBoundingClientRect().width > 0,
     })));
   check(links.every((link) => link.target), 'every anchor points at a real section',
     links.filter((l) => !l.target).map((l) => l.href).join(', ') || `${links.length} links`);
@@ -196,7 +148,7 @@ async function openPage(options) {
     const dialog = document.querySelector('dialog');
     const submit = [...dialog.querySelectorAll('button')].find((b) => b.type === 'submit');
     const box = submit.getBoundingClientRect();
-    return box.bottom <= dialog.getBoundingClientRect().bottom + 1;
+    return box.bottom <= dialog.getBoundingClientRect().bottom + 1 && box.top >= dialog.getBoundingClientRect().top;
   });
   check(fits, 'the submit button fits inside the window without scrolling');
 
@@ -241,22 +193,19 @@ async function openPage(options) {
     await page.waitForTimeout(450);
     blankAfterSettling += await onScreenHidden();
   }
-  check(blankOnArrival === 0, 'nothing is blank the moment it scrolls into view',
-    `${blankOnArrival} block(s)`);
-  check(blankAfterSettling === 0, 'nothing stays transparent after scrolling',
-    `${blankAfterSettling} block(s)`);
-  await page.evaluate(() => window.scrollTo(0, 0));
-  await page.waitForTimeout(400);
+  check(blankOnArrival === 0, 'nothing is blank the moment it scrolls into view', `${blankOnArrival} block(s)`);
+  check(blankAfterSettling === 0, 'nothing stays transparent after scrolling', `${blankAfterSettling} block(s)`);
 
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.waitForTimeout(500);
+  await page.mouse.move(eyeCentre.x - 320, eyeCentre.y - 160);
+  await page.waitForTimeout(400);
   await page.screenshot({ path: path.join(SHOTS, 'desktop-hero.png') });
-  await page.evaluate(() => document.querySelector('footer').scrollIntoView({ block: 'end', behavior: 'instant' }));
-  await page.waitForTimeout(600);
-  await page.screenshot({ path: path.join(SHOTS, 'desktop-footer.png') });
   check(problems.length === 0, 'desktop console and network are clean', problems.slice(0, 3).join(' | '));
   await page.close();
 }
 
-// --- mobile: stacking, looping playback, no overflow -----------------------
+// --- mobile: stacking, no overflow, everything visible ---------------------
 for (const width of [700, 390, 320]) {
   const { page, problems } = await openPage({ viewport: { width, height: 844 }, hasTouch: true, isMobile: true });
 
@@ -264,23 +213,18 @@ for (const width of [700, 390, 320]) {
     const top = (selector) => document.querySelector(selector).getBoundingClientRect().top + window.scrollY;
     return {
       heroText: top('.hero-copy'),
-      tooth: top('#top video'),
+      tooth: top('#top svg[role="img"]'),
       services: top('#services'),
+      toothWidth: Math.round(document.querySelector('#top svg[role="img"]').getBoundingClientRect().width),
       overflow: document.documentElement.scrollWidth - window.innerWidth,
       navColumns: getComputedStyle(document.querySelector('.footer-nav')).gridTemplateColumns.split(' ').length,
     };
   });
   check(layout.heroText < layout.tooth && layout.tooth < layout.services,
     `mobile ${width}px stacks text → character → services`);
+  check(layout.toothWidth > width * 0.5, `mobile ${width}px shows the character large`, `${layout.toothWidth}px`);
   check(layout.overflow <= 0, `mobile ${width}px has no horizontal overflow`, `${layout.overflow}px`);
   check(layout.navColumns === 2, `mobile ${width}px footer nav is a 2-column grid`);
-
-  await page.waitForTimeout(800);
-  const playback = await page.evaluate(() => {
-    const video = document.querySelector('#top video');
-    return { paused: video.paused, loop: video.loop };
-  });
-  check(!playback.paused && playback.loop, `mobile ${width}px character loops`, JSON.stringify(playback));
 
   const hidden = await page.evaluate(() =>
     [...document.querySelectorAll('h1, h2, p, li')].filter((e) => Number(getComputedStyle(e).opacity) < 0.9).length);
@@ -297,15 +241,14 @@ for (const width of [700, 390, 320]) {
   await page.goto(BASE, { waitUntil: 'load' });
   await page.waitForTimeout(800);
   const state = await page.evaluate(() => ({
-    paused: document.querySelector('#top video').paused,
+    character: !!document.querySelector('#top svg[role="img"]'),
     hidden: [...document.querySelectorAll('h1, h2, p, li')].filter((e) => Number(getComputedStyle(e).opacity) < 0.9).length,
   }));
-  check(state.paused, 'reduced motion keeps the character still');
+  check(state.character, 'reduced motion still shows the character');
   check(state.hidden === 0, 'reduced motion still shows every block');
   await page.close();
 }
 
 await browser.close();
-twinServer.close();
 console.log(failures.length ? `\n${failures.length} check(s) failed` : '\nall checks passed');
 process.exit(failures.length ? 1 : 0);

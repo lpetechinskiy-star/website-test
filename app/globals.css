@@ -166,15 +166,15 @@ section[id],footer[id]{scroll-margin-top:88px}
   .booking-day,.booking-time{transition:none}
 }
 
-/* --------------------------------------------------------- character ----- */
+/* --------------------------------------------------------- character ----
+   Drawn inline, so it needs no video decoding and the pupils can be moved
+   directly. Only the pupils change; the rest of the drawing never repaints. */
 .tooth-character{position:relative;width:100%}
-.tooth-character video{display:block;width:100%;height:100%;object-fit:cover;object-position:center}
-.hero-tooth{aspect-ratio:1/1;max-width:520px;margin-inline:auto}
-.hero-tooth video{aspect-ratio:1/1}
-@media(min-width:1024px){
-  .hero-tooth{aspect-ratio:4/5;max-width:none;margin-inline:0}
-  .hero-tooth video{aspect-ratio:4/5}
-}
+.tooth-character svg{display:block;width:100%;height:auto;overflow:visible}
+.tooth-pupil{transition:transform .12s ease-out;will-change:transform}
+.hero-tooth{max-width:420px;margin-inline:auto}
+@media(min-width:1024px){.hero-tooth{max-width:none;margin-inline:0}}
+@media(prefers-reduced-motion:reduce){.tooth-pupil{transition:none}}
 
 /* ------------------------------------------------------------- footer ----
    Three columns placed with vw units, as the original footer was drawn. */
