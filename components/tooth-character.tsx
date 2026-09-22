@@ -24,7 +24,13 @@ const EYES = [
 ];
 const ORBIT = 27;
 
-export function ToothCharacter({ className }: { className?: string }) {
+export function ToothCharacter({
+  className,
+  groundShadow = true,
+}: {
+  className?: string;
+  groundShadow?: boolean;
+}) {
   const svgRef = useRef<SVGSVGElement>(null);
   const pupils = useRef<(SVGGElement | null)[]>([]);
 
@@ -115,7 +121,9 @@ export function ToothCharacter({ className }: { className?: string }) {
         role="img"
         aria-label="Зуб с сердечком, который следит за курсором"
       >
-        <ellipse cx="960" cy="958" rx="245" ry="42" fill="#ddd8ef" opacity=".5" />
+        {groundShadow ? (
+          <ellipse cx="960" cy="958" rx="245" ry="42" fill="#ddd8ef" opacity=".5" />
+        ) : null}
 
         {/* A slightly larger, paler body behind the main one stands in for the
             soft fur edge without an expensive filter. */}
