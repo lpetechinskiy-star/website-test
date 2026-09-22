@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 
 import BrandLogo from '@/app/brand-logo';
-import { Button } from '@/components/ui/button';
+import { BookingButton } from '@/components/booking/booking-provider';
 import { cn } from '@/lib/utils';
 
 const LINKS = [
@@ -58,9 +58,7 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        <Button asChild size="sm" className="rounded-full px-5">
-          <a href="#contacts">Записаться</a>
-        </Button>
+        <BookingButton className="rounded-full px-5 py-2.5 text-sm">Записаться</BookingButton>
       </div>
     </header>
   );

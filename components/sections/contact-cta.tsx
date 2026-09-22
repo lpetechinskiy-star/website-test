@@ -1,6 +1,6 @@
 import { Clock, MapPin, Phone } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
+import { BookingButton } from '@/components/booking/booking-provider';
 import { Reveal } from '@/components/ui/reveal';
 
 // ЗАПОЛНИТЕ: контакты-заглушки — подставьте телефон, адрес и часы работы клиники.
@@ -33,12 +33,9 @@ export function ContactCta() {
                 лишних процедур.
               </p>
 
-              <Button
-                asChild
-                className="mt-9 rounded-2xl bg-lavender px-9 py-6 text-base font-semibold text-ink transition-transform duration-300 hover:-translate-y-0.5 hover:bg-white"
-              >
-                <a href="#contacts">Записаться на приём</a>
-              </Button>
+              <BookingButton className="mt-9 bg-lavender px-9 py-4 text-base text-ink hover:bg-white focus-visible:ring-offset-ink">
+                Записаться на приём
+              </BookingButton>
 
               <dl className="mx-auto mt-14 grid max-w-3xl gap-6 text-left sm:grid-cols-3">
                 {CONTACTS.map(({ icon: Icon, label, value }) => (

@@ -43,9 +43,30 @@ export function ToothCharacter({ className }: { className?: string }) {
     let pointer: { x: number; y: number } | null = null;
     let onScreen = true;
     let disposed = false;
+    let idleTimer = 0;
+    let idling = false;
     const coarse = window.matchMedia('(pointer: coarse)');
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
     const scrubs = () => !coarse.matches && !reducedMotion.matches;
+
+    // With the cursor still, the character keeps looking around on its own, so
+    // it reads as alive rather than frozen.
+    const startIdle = () => {
+      if (disposed || idling || !onScreen || !scrubs()) return;
+      idling = true;
+      video.loop = true;
+      video.playbackRate = 0.45;
+      void video.play().catch(() => { /* A paused frame is fine. */ });
+    };
+    const stopIdle = () => {
+      if (!idling) return;
+      idling = false;
+      video.pause();
+    };
+    const restartIdleTimer = () => {
+      window.clearTimeout(idleTimer);
+      if (scrubs() && onScreen) idleTimer = window.setTimeout(startIdle, 2200);
+    };
 
     const seek = () => {
       frame = 0;
@@ -76,17 +97,22 @@ export function ToothCharacter({ className }: { className?: string }) {
     };
     const move = (event: PointerEvent) => {
       pointer = { x: event.clientX, y: event.clientY };
+      stopIdle();
+      restartIdleTimer();
       updateTarget();
     };
     const ready = () => {
       const loops = !scrubs();
       video.loop = loops;
       if (loops && !reducedMotion.matches && onScreen) {
+        video.playbackRate = 1;
         void video.play().catch(() => { /* Keep the first frame if autoplay is unavailable. */ });
       } else {
+        stopIdle();
         video.pause();
         updateTarget();
         schedule();
+        restartIdleTimer();
       }
     };
 
@@ -94,8 +120,13 @@ export function ToothCharacter({ className }: { className?: string }) {
     const watcher = new IntersectionObserver(
       ([entry]) => {
         onScreen = entry.isIntersecting;
-        if (onScreen) ready();
-        else video.pause();
+        if (onScreen) {
+          ready();
+        } else {
+          stopIdle();
+          window.clearTimeout(idleTimer);
+          video.pause();
+        }
       },
       { rootMargin: '200px' },
     );
@@ -113,6 +144,7 @@ export function ToothCharacter({ className }: { className?: string }) {
     return () => {
       disposed = true;
       cancelAnimationFrame(frame);
+      window.clearTimeout(idleTimer);
       watcher.disconnect();
       video.removeEventListener('seeked', schedule);
       video.removeEventListener('loadeddata', ready);
@@ -126,7 +158,16 @@ export function ToothCharacter({ className }: { className?: string }) {
 
   return (
     <div className={cn('tooth-character', className)} aria-hidden="true">
-      <video ref={videoRef} muted playsInline preload="auto" src="/tooth-scrub.mp4" />
+      {/* The poster keeps the character on screen even where the clip cannot
+          be decoded or autoplay is refused. */}
+      <video
+        ref={videoRef}
+        muted
+        playsInline
+        preload="auto"
+        poster="/tooth-poster.webp"
+        src="/tooth-scrub.mp4"
+      />
     </div>
   );
 }

@@ -111,6 +111,61 @@ section[id],footer[id]{scroll-margin-top:88px}
   .reveal.is-armed{transform:none}
 }
 
+/* ------------------------------------------------------------ booking ----
+   Built on <dialog>, so the browser handles the modal layer, Esc and focus. */
+@keyframes dialog-in{from{opacity:0;transform:translate3d(0,18px,0) scale(.98)}to{opacity:1;transform:none}}
+
+.booking-dialog{
+  /* Tailwind's reset zeroes margins, which is what centres a native dialog. */
+  margin:auto;
+  width:min(680px,calc(100vw - 32px));max-height:min(88vh,860px);padding:0;border:0;
+  border-radius:28px;background:var(--card);color:var(--foreground);
+  box-shadow:0 40px 90px -40px rgba(8,9,9,.5);overflow:auto;overscroll-behavior:contain
+}
+.booking-dialog::backdrop{background:rgba(23,20,45,.45)}
+.booking-dialog[open]{animation:dialog-in .28s cubic-bezier(.22,1,.36,1)}
+.booking-panel{--panel-pad:28px;position:relative;padding:var(--panel-pad)}
+@media(min-width:640px){.booking-panel{--panel-pad:40px}}
+/* The submit button rides along the bottom edge, so it is reachable whatever
+   the screen height. */
+.booking-actions{
+  position:sticky;bottom:calc(var(--panel-pad) * -1);
+  margin:22px calc(var(--panel-pad) * -1) calc(var(--panel-pad) * -1);
+  padding:14px var(--panel-pad) var(--panel-pad);
+  background:linear-gradient(to top,var(--card) 74%,rgba(255,255,255,0))
+}
+
+.booking-field{
+  width:100%;border:1px solid var(--border);border-radius:16px;background:var(--lavender);
+  padding:13px 16px;font:inherit;color:inherit;transition:border-color .15s ease,box-shadow .15s ease
+}
+.booking-field:focus{outline:none;border-color:var(--violet);box-shadow:0 0 0 3px rgba(111,91,208,.18)}
+.booking-field-error{border-color:var(--destructive)}
+.booking-error{display:block;margin-top:6px;font-size:.8rem;color:var(--destructive)}
+
+.booking-scroller{scrollbar-width:thin}
+/* Keeps the whole window — submit button included — on one screen. */
+.booking-times{max-height:148px;overflow-y:auto;padding-right:4px;scrollbar-width:thin}
+.booking-day{
+  display:flex;flex-direction:column;align-items:center;gap:2px;flex:0 0 auto;
+  min-width:64px;padding:10px 12px;border:1px solid var(--border);border-radius:16px;
+  background:var(--lavender);cursor:pointer;transition:border-color .15s ease,background .15s ease,transform .15s ease
+}
+.booking-day:hover{border-color:var(--violet);transform:translateY(-1px)}
+.booking-day-active{background:var(--ink);border-color:var(--ink);color:var(--primary-foreground)}
+
+.booking-time{
+  padding:10px 4px;border:1px solid var(--border);border-radius:14px;background:var(--lavender);
+  font-size:.95rem;cursor:pointer;transition:border-color .15s ease,background .15s ease,transform .15s ease
+}
+.booking-time:hover{border-color:var(--violet);transform:translateY(-1px)}
+.booking-time-active{background:var(--ink);border-color:var(--ink);color:var(--primary-foreground)}
+
+@media(prefers-reduced-motion:reduce){
+  .booking-dialog[open]{animation:none}
+  .booking-day,.booking-time{transition:none}
+}
+
 /* --------------------------------------------------------- character ----- */
 .tooth-character{position:relative;width:100%}
 .tooth-character video{display:block;width:100%;height:100%;object-fit:cover;object-position:center}

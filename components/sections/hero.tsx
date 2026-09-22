@@ -1,5 +1,6 @@
 import { ArrowRight, ShieldCheck, Sparkles, Star } from 'lucide-react';
 
+import { BookingButton } from '@/components/booking/booking-provider';
 import { ToothCharacter } from '@/components/tooth-character';
 import { BackgroundPaths } from '@/components/ui/background-paths';
 import { Button } from '@/components/ui/button';
@@ -32,15 +33,10 @@ export function Hero() {
             </p>
 
             <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row lg:justify-start justify-center">
-              <Button
-                asChild
-                className="h-auto rounded-2xl bg-ink px-8 py-4 text-base font-semibold text-primary-foreground shadow-lg shadow-ink/15 transition-transform duration-200 hover:bg-ink hover:-translate-y-0.5 active:translate-y-0"
-              >
-                <a href="#contacts">
-                  <span>Записаться на приём</span>
-                  <ArrowRight className="ml-2 size-4" aria-hidden />
-                </a>
-              </Button>
+              <BookingButton className="px-8 py-4 text-base shadow-lg shadow-ink/15">
+                Записаться на приём
+                <ArrowRight className="size-4" aria-hidden />
+              </BookingButton>
 
               <Button
                 asChild

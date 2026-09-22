@@ -1,3 +1,4 @@
+import { BookingProvider } from '@/components/booking/booking-provider';
 import { About } from '@/components/sections/about';
 import { ContactCta } from '@/components/sections/contact-cta';
 import { Hero } from '@/components/sections/hero';
@@ -9,7 +10,7 @@ import { SiteHeader } from '@/components/site-header';
 
 export default function Home() {
   return (
-    <>
+    <BookingProvider>
       <SiteHeader />
       <main>
         <Hero />
@@ -20,6 +21,6 @@ export default function Home() {
         <ContactCta />
       </main>
       <SiteFooter />
-    </>
+    </BookingProvider>
   );
 }

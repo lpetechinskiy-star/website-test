@@ -187,6 +187,41 @@ async function openPage(options) {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   check(overflow <= 0, 'desktop has no horizontal overflow', `${overflow}px`);
 
+  // --- booking window ------------------------------------------------------
+  await page.getByRole('button', { name: /Записаться на приём/ }).first().click();
+  await page.waitForTimeout(500);
+  check(await page.evaluate(() => !!document.querySelector('dialog')?.open), 'booking window opens');
+
+  const fits = await page.evaluate(() => {
+    const dialog = document.querySelector('dialog');
+    const submit = [...dialog.querySelectorAll('button')].find((b) => b.type === 'submit');
+    const box = submit.getBoundingClientRect();
+    return box.bottom <= dialog.getBoundingClientRect().bottom + 1;
+  });
+  check(fits, 'the submit button fits inside the window without scrolling');
+
+  await page.getByRole('button', { name: 'Записаться', exact: true }).last().click();
+  await page.waitForTimeout(300);
+  const complaints = await page.evaluate(() => [...document.querySelectorAll('.booking-error')].map((e) => e.textContent));
+  check(complaints.length >= 3, 'an empty form is refused with reasons', complaints.join(' / '));
+
+  await page.fill('#booking-name', 'Анна');
+  await page.fill('#booking-phone', '9001234567');
+  await page.locator('.booking-day').nth(1).click();
+  await page.locator('.booking-time').nth(4).click();
+  check(await page.evaluate(() => document.querySelectorAll('.booking-error').length) === 0,
+    'errors clear as the fields are filled in');
+
+  await page.getByRole('button', { name: 'Записаться', exact: true }).last().click();
+  await page.waitForTimeout(400);
+  const summary = await page.evaluate(() => document.querySelector('dialog')?.textContent ?? '');
+  check(summary.includes('Заявка принята') && summary.includes('+7 (900) 123-45-67'),
+    'the filled form reaches the confirmation with the entered details');
+
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(300);
+  check(await page.evaluate(() => !document.querySelector('dialog')?.open), 'Esc closes the window');
+
   // Walk the page the way a visitor does: jump, look immediately (nothing may
   // be blank), then look again once things settle.
   const fullyBlank = () => page.evaluate(() =>
