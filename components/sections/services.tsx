@@ -54,8 +54,8 @@ export function Services() {
         </Reveal>
 
         <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {SERVICES.map(({ icon: Icon, title, text }, index) => (
-            <Reveal key={title} delay={index * 0.06}>
+          {SERVICES.map(({ icon: Icon, title, text }) => (
+            <Reveal key={title}>
               <SpotlightCard className="h-full">
                 <span className="flex size-12 items-center justify-center rounded-2xl bg-accent text-ink">
                   <Icon className="size-6" aria-hidden />

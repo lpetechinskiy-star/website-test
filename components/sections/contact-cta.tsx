@@ -18,7 +18,11 @@ export function ContactCta() {
           <div className="relative overflow-hidden rounded-[2rem] bg-ink px-8 py-14 text-center md:px-16 md:py-20">
             <div
               aria-hidden
-              className="pointer-events-none absolute -top-24 left-1/2 size-[520px] -translate-x-1/2 rounded-full bg-violet/35 blur-3xl"
+              className="pointer-events-none absolute inset-0"
+              style={{
+                background:
+                  'radial-gradient(55% 55% at 50% 0%, rgba(111,91,208,0.45) 0%, transparent 70%)',
+              }}
             />
             <div className="relative">
               <h2 className="mx-auto max-w-3xl font-display text-[clamp(1.9rem,4.5vw,3.25rem)] leading-[1.1] font-black text-lavender">

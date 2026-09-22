@@ -1,10 +1,8 @@
 import BrandLogo from '@/app/brand-logo';
-import FooterBackground from '@/app/footer-background';
 
 export function SiteFooter() {
   return (
     <footer className="footer" id="contacts" aria-label="Footer">
-      <FooterBackground />
       <div className="jobs">
         <span className="tag">нужен осмотр?</span>
         <span className="headline job-title">забота о вас<br />и мастерство</span>

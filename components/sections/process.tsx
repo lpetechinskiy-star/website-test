@@ -34,7 +34,7 @@ export function Process() {
 
         <ol className="mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
           {STEPS.map((step, index) => (
-            <Reveal key={step.title} delay={index * 0.08}>
+            <Reveal key={step.title}>
               <li className="group relative h-full list-none overflow-hidden rounded-3xl border border-border bg-card p-7 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_-30px_rgba(8,9,9,0.4)]">
                 <span className="font-display text-5xl leading-none font-black text-blush transition-colors duration-300 group-hover:text-violet">
                   {String(index + 1).padStart(2, '0')}

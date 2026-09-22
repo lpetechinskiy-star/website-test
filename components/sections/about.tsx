@@ -23,7 +23,11 @@ export function About() {
     <section id="about" className="relative overflow-hidden bg-card py-24 md:py-32">
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-32 -right-24 size-[480px] rounded-full bg-accent/60 blur-3xl"
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            'radial-gradient(42% 42% at 88% 8%, rgba(255,227,237,0.75) 0%, transparent 70%)',
+        }}
       />
       <div className="relative mx-auto grid max-w-6xl gap-14 px-6 md:px-10 lg:grid-cols-2 lg:items-center">
         <Reveal>
@@ -51,7 +55,7 @@ export function About() {
           </ul>
         </Reveal>
 
-        <Reveal delay={0.1}>
+        <Reveal>
           <div className="grid grid-cols-2 gap-4">
             {STATS.map((stat) => (
               <div

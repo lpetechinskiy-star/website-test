@@ -34,7 +34,7 @@ export function SiteHeader() {
         className={cn(
           'mx-auto flex max-w-6xl items-center justify-between gap-6 rounded-full px-5 py-2.5 transition-all duration-300 md:px-6',
           scrolled
-            ? 'border border-border bg-lavender/85 shadow-[0_10px_40px_-24px_rgba(8,9,9,0.45)] backdrop-blur-xl'
+            ? 'border border-border bg-lavender shadow-[0_10px_40px_-24px_rgba(8,9,9,0.45)]'
             : 'border border-transparent bg-transparent',
         )}
       >
