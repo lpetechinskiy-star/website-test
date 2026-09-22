@@ -80,6 +80,10 @@ async function useTwin(page) {
 async function openPage(options) {
   const page = await browser.newPage(options);
   await page.goto(BASE, { waitUntil: 'load' });
+  // The footer sits at the end of the landing page, so bring it into view
+  // before measuring anything.
+  await page.evaluate(() => document.querySelector('.footer').scrollIntoView({ block: 'end', behavior: 'instant' }));
+  await page.waitForTimeout(400);
   await useTwin(page);
   await page.waitForFunction(() => {
     const video = document.querySelector('.footer-background video');
@@ -110,54 +114,62 @@ async function openPage(options) {
     ['up', 0, -320],
   ];
 
+  // Reads the pupils straight out of the frame the page is showing: where the
+  // character is actually looking, not where the lookup table says it should.
+  const measure = () => page.evaluate(() => {
+    const video = document.querySelector('.footer-background video');
+    const canvas = document.createElement('canvas');
+    canvas.width = 1920;
+    canvas.height = 1080;
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    context.drawImage(video, 0, 0, 1920, 1080);
+    const pupil = (cx, cy, r) => {
+      const { data } = context.getImageData(cx - r, cy - r, r * 2, r * 2);
+      let sumX = 0;
+      let sumY = 0;
+      let count = 0;
+      for (let y = 0; y < r * 2; y += 1) {
+        for (let x = 0; x < r * 2; x += 1) {
+          const i = (y * r * 2 + x) * 4;
+          const luminance = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+          if (luminance < 90) { sumX += x; sumY += y; count += 1; }
+        }
+      }
+      return count ? { x: cx - r + sumX / count - cx, y: cy - r + sumY / count - cy } : null;
+    };
+    return {
+      time: video.currentTime,
+      left: pupil(858, 418, 70),
+      right: pupil(1038, 418, 70),
+    };
+  });
+
+  const angleGap = (a, b) =>
+    Math.abs(((a - b) % (Math.PI * 2) + Math.PI * 3) % (Math.PI * 2) - Math.PI);
+
   for (const [name, dx, dy] of cardinals) {
     await page.mouse.move(eye.x + dx, eye.y + dy);
-    await page.waitForFunction(() => {
-      const video = document.querySelector('.footer-background video');
-      return !video.seeking && video.readyState >= 2;
-    }, null, { timeout: 4000 }).catch(() => {});
-    await page.waitForTimeout(250);
 
-    // Read the pupils straight out of the frame the page is showing: where the
-    // character is actually looking, not where the lookup table says it should.
-    const shown = await page.evaluate(() => {
-      const video = document.querySelector('.footer-background video');
-      const canvas = document.createElement('canvas');
-      canvas.width = 1920;
-      canvas.height = 1080;
-      const context = canvas.getContext('2d', { willReadFrequently: true });
-      context.drawImage(video, 0, 0, 1920, 1080);
-      const pupil = (cx, cy, r) => {
-        const { data } = context.getImageData(cx - r, cy - r, r * 2, r * 2);
-        let sumX = 0;
-        let sumY = 0;
-        let count = 0;
-        for (let y = 0; y < r * 2; y += 1) {
-          for (let x = 0; x < r * 2; x += 1) {
-            const i = (y * r * 2 + x) * 4;
-            const luminance = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-            if (luminance < 90) { sumX += x; sumY += y; count += 1; }
-          }
-        }
-        return count ? { x: cx - r + sumX / count - cx, y: cy - r + sumY / count - cy } : null;
-      };
-      return {
-        time: video.currentTime,
-        left: pupil(858, 418, 70),
-        right: pupil(1038, 418, 70),
-      };
-    });
-
+    // The component coalesces seeks through requestAnimationFrame, and this
+    // headless build only reaches a handful of frames per second, so poll until
+    // the shown frame settles instead of assuming one tick is enough.
     const wanted = Math.atan2(dy, dx);
-    const measured = Math.atan2(
-      (shown.left.y + shown.right.y) / 2,
-      (shown.left.x + shown.right.x) / 2,
-    );
-    const difference = Math.abs(((wanted - measured) % (Math.PI * 2) + Math.PI * 3) % (Math.PI * 2) - Math.PI);
+    let shown = await measure();
+    let measured = Number.NaN;
+    for (let attempt = 0; attempt < 30; attempt += 1) {
+      shown = await measure();
+      measured = Math.atan2(
+        (shown.left.y + shown.right.y) / 2,
+        (shown.left.x + shown.right.x) / 2,
+      );
+      if (angleGap(wanted, measured) < 0.2) break;
+      await page.waitForTimeout(200);
+    }
+
     check(
-      difference < 0.2,
+      angleGap(wanted, measured) < 0.2,
       `gaze ${name}`,
-      `pupils at ${(measured * 180 / Math.PI).toFixed(1)}°, cursor at ${(wanted * 180 / Math.PI).toFixed(1)}°, ` +
+      `pupils at ${(measured * 180 / Math.PI).toFixed(1)}\u00b0, cursor at ${(wanted * 180 / Math.PI).toFixed(1)}\u00b0, ` +
       `frame ${(shown.time * FPS).toFixed(2)}`,
     );
     await page.screenshot({ path: path.join(SHOTS, `gaze-${name}.png`) });
@@ -218,6 +230,7 @@ for (const width of [700, 390, 320]) {
     reducedMotion: 'reduce',
   });
   await page.goto(BASE, { waitUntil: 'load' });
+  await page.evaluate(() => document.querySelector('.footer').scrollIntoView({ block: 'end', behavior: 'instant' }));
   await useTwin(page);
   await page.waitForFunction(() => {
     const video = document.querySelector('.footer-background video');
