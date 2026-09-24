@@ -129,12 +129,65 @@ const pupilOffsets = (page) => page.evaluate(() =>
     'the eyes keep moving when the cursor stands still');
 
   const links = await page.evaluate(() =>
-    [...document.querySelectorAll('a[href^="#"]')].map((a) => ({
-      href: a.getAttribute('href'),
-      target: !!document.querySelector(a.getAttribute('href')),
-    })));
+    [...document.querySelectorAll('a[href^="#"]')]
+      .map((a) => a.getAttribute('href'))
+      // A bare "#" is a placeholder link (socials) — nothing to resolve.
+      .filter((href) => href.length > 1)
+      .map((href) => ({ href, target: !!document.querySelector(href) })));
   check(links.every((link) => link.target), 'every anchor points at a real section',
     links.filter((l) => !l.target).map((l) => l.href).join(', ') || `${links.length} links`);
+
+  // --- the sections a clinic site needs -----------------------------------
+  const sections = await page.evaluate(() =>
+    ['top', 'services', 'why', 'doctors', 'prices', 'tech', 'about', 'process', 'reviews', 'faq', 'contacts']
+      .filter((id) => !document.getElementById(id)));
+  check(sections.length === 0, 'every section is on the page', sections.join(', ') || '11 sections');
+
+  const headings = await page.evaluate(() => ({
+    h1: document.querySelectorAll('h1').length,
+    h2: document.querySelectorAll('h2').length,
+    h3: document.querySelectorAll('h3').length,
+    titled: [...document.querySelectorAll('main section')].every((s) => s.querySelector('h1, h2')),
+  }));
+  check(headings.h1 === 1 && headings.titled,
+    'headings run h1 → h2 → h3 with one h1',
+    `h1:${headings.h1} h2:${headings.h2} h3:${headings.h3}`);
+
+  const seo = await page.evaluate(() => {
+    const schema = [...document.querySelectorAll('script[type="application/ld+json"]')]
+      .map((node) => JSON.parse(node.textContent));
+    return {
+      title: document.title,
+      description: document.querySelector('meta[name="description"]')?.content ?? '',
+      types: schema.map((item) => item['@type']),
+      images: [...document.querySelectorAll('img')].filter((img) => !img.hasAttribute('alt')).length,
+      svgLabels: [...document.querySelectorAll('svg[role="img"]')].filter((svg) => !svg.getAttribute('aria-label')).length,
+    };
+  });
+  check(seo.title.length > 30 && seo.description.length > 80, 'title and description are filled in',
+    `${seo.title.length} / ${seo.description.length} chars`);
+  check(seo.types.includes('Dentist') && seo.types.includes('FAQPage'),
+    'Schema.org markup covers the clinic and the FAQ', seo.types.join(', '));
+  check(seo.images === 0 && seo.svgLabels === 0, 'every image and drawing is labelled');
+
+  // FAQ opens without any library.
+  await page.evaluate(() => document.querySelector('#faq').scrollIntoView({ block: 'center', behavior: 'instant' }));
+  await page.locator('.faq-item summary').first().click();
+  await page.waitForTimeout(250);
+  check(await page.evaluate(() => document.querySelector('.faq-item')?.open === true), 'FAQ accordion opens');
+
+  const phone = await page.evaluate(() => {
+    const link = document.querySelector('a[href^="tel:"]');
+    return { exists: !!link, href: link?.getAttribute('href') ?? '' };
+  });
+  check(phone.exists, 'the phone number is a tel: link', phone.href);
+  check(await page.evaluate(() => !!document.querySelector('a[href*="yandex.ru/maps"]')),
+    'the route button links to a map');
+
+  for (const file of ['privacy.html', 'consent.html']) {
+    const status = await page.evaluate(async (name) => (await fetch(name)).status, file);
+    check(status === 200, `${file} is served`, `HTTP ${status}`);
+  }
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   check(overflow <= 0, 'desktop has no horizontal overflow', `${overflow}px`);
@@ -155,20 +208,27 @@ const pupilOffsets = (page) => page.evaluate(() =>
   await page.getByRole('button', { name: 'Записаться', exact: true }).last().click();
   await page.waitForTimeout(300);
   const complaints = await page.evaluate(() => [...document.querySelectorAll('.booking-error')].map((e) => e.textContent));
-  check(complaints.length >= 3, 'an empty form is refused with reasons', complaints.join(' / '));
+  check(complaints.length >= 4, 'an empty form is refused with reasons', complaints.join(' / '));
 
   await page.fill('#booking-name', 'Анна');
   await page.fill('#booking-phone', '9001234567');
+  await page.fill('#booking-comment', 'Удобно перезвонить после 18:00');
   await page.locator('.booking-day').nth(1).click();
   await page.locator('.booking-time').nth(4).click();
+  check(await page.evaluate(() => document.querySelectorAll('.booking-error').length) === 1,
+    'only the consent box is still missing');
+
+  await page.check('#booking-consent');
   check(await page.evaluate(() => document.querySelectorAll('.booking-error').length) === 0,
     'errors clear as the fields are filled in');
 
   await page.getByRole('button', { name: 'Записаться', exact: true }).last().click();
   await page.waitForTimeout(400);
   const summary = await page.evaluate(() => document.querySelector('dialog')?.textContent ?? '');
-  check(summary.includes('Заявка принята') && summary.includes('+7 (900) 123-45-67'),
+  check(summary.includes('Спасибо! Заявка отправлена') && summary.includes('+7 (900) 123-45-67'),
     'the filled form reaches the confirmation with the entered details');
+  check(await page.evaluate(() => (window.dataLayer ?? []).some((e) => e.event === 'booking_submit')),
+    'the booking events reach the analytics layer');
 
   await page.keyboard.press('Escape');
   await page.waitForTimeout(300);
@@ -229,6 +289,30 @@ for (const width of [700, 390, 320]) {
   const hidden = await page.evaluate(() =>
     [...document.querySelectorAll('h1, h2, p, li')].filter((e) => Number(getComputedStyle(e).opacity) < 0.9).length);
   check(hidden === 0, `mobile ${width}px shows all copy`, `${hidden} hidden`);
+
+  // The burger menu replaces the inline navigation on narrow screens.
+  await page.getByRole('button', { name: 'Открыть меню' }).click();
+  await page.waitForTimeout(250);
+  const menu = await page.evaluate(() => {
+    const nav = document.querySelector('#mobile-nav');
+    const items = [...nav.querySelectorAll('a')];
+    return {
+      visible: !nav.hidden && nav.getBoundingClientRect().height > 0,
+      items: items.length,
+      tallEnough: items.every((a) => a.getBoundingClientRect().height >= 40),
+      insideScreen: items.every((a) => a.getBoundingClientRect().right <= window.innerWidth + 1),
+    };
+  });
+  check(menu.visible && menu.items === 6 && menu.tallEnough && menu.insideScreen,
+    `mobile ${width}px menu opens with tappable items`, JSON.stringify(menu));
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(200);
+
+  // Cards must not spill out of the screen anywhere on the page.
+  const spills = await page.evaluate(() =>
+    [...document.querySelectorAll('section article, section figure, section li, .price-row, .map-frame')]
+      .filter((el) => el.getBoundingClientRect().right > window.innerWidth + 1).length);
+  check(spills === 0, `mobile ${width}px keeps every card inside the screen`, `${spills} spilling`);
 
   await page.screenshot({ path: path.join(SHOTS, `mobile-${width}.png`), fullPage: true });
   check(problems.length === 0, `mobile ${width}px console and network are clean`, problems.slice(0, 2).join(' | '));

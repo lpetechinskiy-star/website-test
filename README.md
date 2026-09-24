@@ -1,8 +1,8 @@
 # Стоматологический лендинг
 
-Одностраничный сайт клиники: герой с персонажем-зубом, который следит за
-курсором, и анимированным фоном из линий (`components/ui/background-paths.tsx`),
-услуги, блок о клинике со счётчиками, этапы приёма, финальный призыв и футер.
+Одностраничный сайт клиники. Порядок блоков: герой с персонажем-зубом,
+бегущая строка, услуги, «почему мы», врачи, цены, технологии, о клинике,
+этапы приёма, отзывы, вопросы, финальный призыв с контактами и футер.
 
 Стек: Next.js (App Router) + TypeScript + Tailwind CSS v4, структура shadcn/ui
 (`components/ui`, `lib/utils.ts`, `components.json`), иконки из lucide-react.
@@ -42,9 +42,25 @@ scripts/                генераторы ассетов и провероч�
 
 Плейсхолдеры помечены комментарием `ЗАПОЛНИТЕ` в коде:
 
-- `components/booking/booking-dialog.tsx` — отправка заявки;
-- `components/sections/about.tsx` — цифры клиники (стаж, число пациентов, оценка, гарантия);
-- `components/sections/contact-cta.tsx` — телефон, адрес и часы работы.
+- `lib/clinic.ts` — телефон, адрес, часы, мессенджеры, соцсети, ссылка на
+  маршрут. Значения подтягиваются в шапку, контакты, футер и Schema.org;
+- `components/booking/booking-dialog.tsx` — отправка заявки (бэкенда нет);
+- `components/sections/about.tsx` — цифры клиники;
+- `components/sections/doctors.tsx` — имена, специализации, стаж, фотографии;
+- `components/sections/prices.tsx` — прайс;
+- `components/sections/reviews.tsx` — отзывы (сейчас заглушки, а не выдуманные);
+- `components/sections/contact-cta.tsx` — контейнер под карту: вставьте iframe;
+- `public/privacy.html`, `public/consent.html` — тексты документов;
+- `lib/analytics.ts` — подключение счётчика к событиям `booking_open`,
+  `booking_submit`, `phone_click`, `route_click`, `messenger_click`.
+
+## SEO и доступность
+
+`app/layout.tsx` держит title, description, Open Graph и разметку `Dentist`;
+блок вопросов отдаёт `FAQPage`. На странице один `h1` (герой), у каждой секции
+`h2`, у карточек `h3`. У всех изображений и рисунков есть подписи, у форм —
+`label`, фокус клавиатуры виден на всех интерактивных элементах, FAQ и
+«Подробнее» собраны на `<details>` — работают с клавиатуры без JS.
 
 ## Персонаж
 

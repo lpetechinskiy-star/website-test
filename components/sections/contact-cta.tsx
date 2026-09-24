@@ -1,15 +1,10 @@
-import { Clock, MapPin, Phone } from 'lucide-react';
+import { Clock, MapPin, MessageCircle, Navigation, Phone, Send } from 'lucide-react';
 
 import { BookingButton } from '@/components/booking/booking-provider';
 import { ToothCharacter } from '@/components/tooth-character';
 import { Reveal } from '@/components/ui/reveal';
-
-// ЗАПОЛНИТЕ: контакты-заглушки — подставьте телефон, адрес и часы работы клиники.
-const CONTACTS = [
-  { icon: Phone, label: 'Телефон', value: '+7 (000) 000-00-00' },
-  { icon: MapPin, label: 'Адрес', value: 'г. Город, ул. Улица, 1' },
-  { icon: Clock, label: 'Часы работы', value: 'пн–сб, 9:00–21:00' },
-];
+import { TrackedLink } from '@/components/ui/tracked-link';
+import { CLINIC } from '@/lib/clinic';
 
 const SPARKS = [
   { top: '18%', left: '12%', size: 8, delay: '0s' },
@@ -96,19 +91,92 @@ export function ContactCta() {
             </div>
 
             <dl className="relative mt-14 grid gap-4 text-left sm:grid-cols-3">
-              {CONTACTS.map(({ icon: Icon, label, value }) => (
-                <div
-                  key={label}
-                  className="rounded-2xl border border-lavender/15 p-5 transition-colors duration-300 hover:border-lavender/40"
-                >
-                  <dt className="flex items-center gap-2 text-sm text-lavender/60">
-                    <Icon className="size-4" aria-hidden />
-                    {label}
-                  </dt>
-                  <dd className="mt-2 text-lavender">{value}</dd>
-                </div>
-              ))}
+              <div className="rounded-2xl border border-lavender/15 p-5 transition-colors duration-300 hover:border-lavender/40">
+                <dt className="flex items-center gap-2 text-sm text-lavender/60">
+                  <Phone className="size-4" aria-hidden />
+                  Телефон
+                </dt>
+                <dd className="mt-2">
+                  <TrackedLink
+                    href={CLINIC.phoneHref}
+                    event="phone_click"
+                    className="text-lavender underline-offset-4 hover:underline"
+                    aria-label={`Позвонить по номеру ${CLINIC.phone}`}
+                  >
+                    {CLINIC.phone}
+                  </TrackedLink>
+                </dd>
+                <dd className="mt-3 flex gap-2">
+                  <TrackedLink
+                    href={CLINIC.whatsapp}
+                    event="messenger_click"
+                    external
+                    aria-label="Написать в WhatsApp"
+                    className="flex size-9 items-center justify-center rounded-full border border-lavender/20 text-lavender/80 transition-colors hover:border-lavender/50 hover:text-lavender"
+                  >
+                    <MessageCircle className="size-4" aria-hidden />
+                  </TrackedLink>
+                  <TrackedLink
+                    href={CLINIC.telegram}
+                    event="messenger_click"
+                    external
+                    aria-label="Написать в Telegram"
+                    className="flex size-9 items-center justify-center rounded-full border border-lavender/20 text-lavender/80 transition-colors hover:border-lavender/50 hover:text-lavender"
+                  >
+                    <Send className="size-4" aria-hidden />
+                  </TrackedLink>
+                </dd>
+              </div>
+
+              <div className="rounded-2xl border border-lavender/15 p-5 transition-colors duration-300 hover:border-lavender/40">
+                <dt className="flex items-center gap-2 text-sm text-lavender/60">
+                  <MapPin className="size-4" aria-hidden />
+                  Адрес
+                </dt>
+                <dd className="mt-2 text-lavender">{CLINIC.address}</dd>
+                <dd className="mt-3">
+                  <TrackedLink
+                    href={CLINIC.routeUrl}
+                    event="route_click"
+                    external
+                    className="inline-flex items-center gap-2 rounded-full border border-lavender/25 px-4 py-2 text-sm text-lavender transition-colors hover:border-lavender/60 hover:bg-lavender/10"
+                  >
+                    <Navigation className="size-4" aria-hidden />
+                    Построить маршрут
+                  </TrackedLink>
+                </dd>
+              </div>
+
+              <div className="rounded-2xl border border-lavender/15 p-5 transition-colors duration-300 hover:border-lavender/40">
+                <dt className="flex items-center gap-2 text-sm text-lavender/60">
+                  <Clock className="size-4" aria-hidden />
+                  Часы работы
+                </dt>
+                <dd className="mt-2 text-lavender">{CLINIC.hours}</dd>
+                <dd className="mt-3 text-sm text-lavender/60">Приём по записи</dd>
+              </div>
             </dl>
+          </div>
+        </Reveal>
+
+        {/* ЗАПОЛНИТЕ: вставьте сюда iframe Яндекс.Карт или 2ГИС с точкой клиники —
+            контейнер уже готов и держит пропорции. */}
+        <Reveal className="mt-6">
+          <div className="map-frame" role="img" aria-label="Карта проезда к клинике — заглушка">
+            <div className="map-pin">
+              <MapPin className="size-5" aria-hidden />
+            </div>
+            <p className="font-display text-lg font-black">Здесь будет карта</p>
+            <p className="mt-1 text-sm text-muted-foreground">{CLINIC.address}</p>
+            <TrackedLink
+              href={CLINIC.routeUrl}
+              event="route_click"
+              external
+              className="mt-4 inline-flex items-center gap-2 rounded-full border border-border bg-card px-5 py-2.5 text-sm transition-colors hover:border-violet/50"
+            >
+              <Navigation className="size-4" aria-hidden />
+              Построить маршрут
+            </TrackedLink>
           </div>
         </Reveal>
       </div>

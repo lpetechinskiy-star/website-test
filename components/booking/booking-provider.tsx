@@ -3,13 +3,17 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 
 import { BookingDialog } from './booking-dialog';
+import { track } from '@/lib/analytics';
 import { cn } from '@/lib/utils';
 
 const BookingContext = createContext<{ open: () => void } | null>(null);
 
 export function BookingProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
-  const open = useCallback(() => setIsOpen(true), []);
+  const open = useCallback(() => {
+    track('booking_open');
+    setIsOpen(true);
+  }, []);
   const close = useCallback(() => setIsOpen(false), []);
   const value = useMemo(() => ({ open }), [open]);
 

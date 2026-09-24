@@ -3,6 +3,7 @@
 import { Check, Clock, Phone, User, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 
+import { track } from '@/lib/analytics';
 import { cn } from '@/lib/utils';
 
 const SERVICES = [
@@ -76,6 +77,8 @@ export function BookingDialog({ open, onClose }: { open: boolean; onClose: () =>
   const [service, setService] = useState(SERVICES[0]);
   const [day, setDay] = useState('');
   const [time, setTime] = useState('');
+  const [comment, setComment] = useState('');
+  const [consent, setConsent] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const clearError = (field: string) =>
     setErrors((current) => {
@@ -119,6 +122,8 @@ export function BookingDialog({ open, onClose }: { open: boolean; onClose: () =>
     setName('');
     setPhone('');
     setTime('');
+    setComment('');
+    setConsent(false);
   };
 
   const submit = (event: FormEvent) => {
@@ -128,11 +133,19 @@ export function BookingDialog({ open, onClose }: { open: boolean; onClose: () =>
     if (digitsOf(phone).length !== 11) found.phone = 'Введите номер полностью';
     if (!day) found.day = 'Выберите день';
     if (!time) found.time = 'Выберите время';
+    if (!consent) found.consent = 'Нужно согласие на обработку данных';
     setErrors(found);
     if (Object.keys(found).length) return;
 
-    // ЗАПОЛНИТЕ: здесь заявка только собирается. Отправьте её в CRM или на
-    // почту клиники — например, fetch('/api/booking', { method: 'POST', ... }).
+    // ЗАПОЛНИТЕ: бэкенда нет, поэтому заявка никуда не уходит — форма только
+    // собирает данные. Подключите отправку сюда, например:
+    //   await fetch('/api/booking', {
+    //     method: 'POST',
+    //     headers: { 'Content-Type': 'application/json' },
+    //     body: JSON.stringify({ name, phone, service, day, time, comment }),
+    //   });
+    // и показывайте экран успеха только после успешного ответа.
+    track('booking_submit', { service, day, time });
     setDone(true);
   };
 
@@ -156,14 +169,12 @@ export function BookingDialog({ open, onClose }: { open: boolean; onClose: () =>
               <Check className="size-7" aria-hidden />
             </span>
             <h2 id="booking-title" className="mt-6 font-display text-2xl font-black">
-              Заявка принята
+              Спасибо! Заявка отправлена
             </h2>
             <p className="mt-3 text-muted-foreground">
-              {name.trim()}, ждём вас{' '}
-              <b className="text-ink">
-                {chosenDay ? `${chosenDay.day} ${chosenDay.month}` : ''}, {time}
-              </b>
-              . Администратор перезвонит на {formatPhone(phone)}, чтобы подтвердить запись.
+              Мы свяжемся с вами для подтверждения записи{' '}
+              <b className="text-ink">{chosenDay ? `${chosenDay.day} ${chosenDay.month}` : ''}, {time}</b>{' '}
+              по номеру {formatPhone(phone)}.
             </p>
             <dl className="mt-7 grid gap-2 rounded-2xl bg-muted p-5 text-left text-sm">
               <div className="flex justify-between gap-4">
@@ -302,6 +313,34 @@ export function BookingDialog({ open, onClose }: { open: boolean; onClose: () =>
               {errors.time ? <span className="booking-error">{errors.time}</span> : null}
             </div>
 
+            <label className="mt-6 block">
+              <span className="mb-2 block text-sm text-muted-foreground">
+                Комментарий <span className="text-muted-foreground/70">— необязательно</span>
+              </span>
+              <textarea
+                id="booking-comment"
+                value={comment}
+                onChange={(event) => setComment(event.target.value)}
+                rows={3}
+                placeholder="Что беспокоит, удобно ли перезвонить, нужна ли помощь с выбором врача"
+                className="booking-field resize-y"
+              />
+            </label>
+
+            <label className="booking-consent mt-5">
+              <input
+                id="booking-consent"
+                type="checkbox"
+                checked={consent}
+                onChange={(event) => { setConsent(event.target.checked); clearError('consent'); }}
+              />
+              <span>
+                Согласен на обработку персональных данных и принимаю{' '}
+                <a href="privacy.html" target="_blank" rel="noreferrer">политику конфиденциальности</a>.
+              </span>
+            </label>
+            {errors.consent ? <span className="booking-error">{errors.consent}</span> : null}
+
             <div className="booking-actions">
               <button
                 type="submit"
@@ -310,7 +349,7 @@ export function BookingDialog({ open, onClose }: { open: boolean; onClose: () =>
                 Записаться
               </button>
               <p className="mt-3 text-center text-xs text-muted-foreground">
-                Нажимая кнопку, вы соглашаетесь на обработку персональных данных.
+                Перезвоним в рабочее время, чтобы подтвердить запись.
               </p>
             </div>
           </form>
