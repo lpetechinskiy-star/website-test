@@ -5,3 +5,4 @@ frames/
 next-env.d.ts
 *.tsbuildinfo
 .DS_Store
+single/
