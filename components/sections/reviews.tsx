@@ -29,7 +29,7 @@ function Rating({ value }: { value: number }) {
 
 export function Reviews() {
   return (
-    <section id="reviews" className="bg-card py-24 md:py-28" aria-labelledby="reviews-title">
+    <section id="reviews" className="bg-card py-16 md:py-28" aria-labelledby="reviews-title">
       <div className="mx-auto max-w-6xl px-6 md:px-10">
         <Reveal className="max-w-2xl">
           <span className="inline-flex items-center rounded-full bg-lavender px-4 py-1.5 text-sm text-muted-foreground">
@@ -43,7 +43,7 @@ export function Reviews() {
           </p>
         </Reveal>
 
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-8 grid md:mt-12 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {REVIEWS.map((review, index) => (
             <Reveal key={index}>
               <figure className="flex h-full flex-col rounded-3xl border border-border bg-lavender p-6 transition-colors duration-300 hover:border-violet/40">

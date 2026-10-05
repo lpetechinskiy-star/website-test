@@ -33,7 +33,7 @@ const TECH = [
 
 export function Technologies() {
   return (
-    <section id="tech" className="bg-lavender py-24 md:py-28" aria-labelledby="tech-title">
+    <section id="tech" className="bg-lavender py-16 md:py-28" aria-labelledby="tech-title">
       <div className="mx-auto max-w-6xl px-6 md:px-10">
         <Reveal className="max-w-2xl">
           <span className="inline-flex items-center rounded-full bg-card px-4 py-1.5 text-sm text-muted-foreground">
@@ -44,7 +44,7 @@ export function Technologies() {
           </h2>
         </Reveal>
 
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-8 grid md:mt-12 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {TECH.map(({ icon: Icon, title, text }) => (
             <Reveal key={title}>
               <SpotlightCard className="h-full">

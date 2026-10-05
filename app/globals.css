@@ -129,7 +129,7 @@ section[id],footer[id]{scroll-margin-top:88px}
 /* The submit button rides along the bottom edge, so it is reachable whatever
    the screen height. */
 .booking-actions{
-  position:sticky;bottom:calc(var(--panel-pad) * -1);
+  position:sticky;z-index:1;bottom:calc(var(--panel-pad) * -1);
   margin:22px calc(var(--panel-pad) * -1) calc(var(--panel-pad) * -1);
   padding:14px var(--panel-pad) var(--panel-pad);
   background:linear-gradient(to top,var(--card) 74%,rgba(255,255,255,0))
@@ -142,6 +142,41 @@ section[id],footer[id]{scroll-margin-top:88px}
 .booking-field:focus{outline:none;border-color:var(--violet);box-shadow:0 0 0 3px rgba(111,91,208,.18)}
 .booking-field-error{border-color:var(--destructive)}
 .booking-error{display:block;margin-top:6px;font-size:.8rem;color:var(--destructive)}
+
+/* Свой список вместо браузерного: тот же вид, что у полей ввода, и
+   одинаковый во всех системах. */
+.select-field{position:relative}
+.select-trigger{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  text-align:left;cursor:pointer
+}
+.select-trigger-open{border-color:var(--violet);box-shadow:0 0 0 3px rgba(111,91,208,.18)}
+.select-chevron{width:18px;height:18px;flex-shrink:0;color:var(--muted-foreground);transition:transform .2s ease}
+.select-trigger-open .select-chevron{transform:rotate(180deg)}
+
+.select-list{
+  /* Выше липкой кнопки «Записаться», иначе она накрывает последний пункт. */
+  position:absolute;z-index:30;inset-inline:0;top:calc(100% + 8px);
+  max-height:min(336px,52vh);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;
+  margin:0;padding:6px;list-style:none;
+  border:1px solid var(--border);border-radius:18px;background:var(--card);
+  box-shadow:0 26px 60px -24px rgba(8,9,9,.4);
+  animation:select-open .16s cubic-bezier(.22,1,.36,1)
+}
+@keyframes select-open{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+
+.select-option{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:11px 14px;border-radius:12px;cursor:pointer;
+  transition:background .12s ease,color .12s ease
+}
+.select-option-active{background:var(--lavender)}
+.select-option-chosen{color:var(--violet);font-weight:600}
+
+@media(prefers-reduced-motion:reduce){
+  .select-list{animation:none}
+  .select-chevron{transition:none}
+}
 
 .booking-scroller{scrollbar-width:thin}
 /* Keeps the whole window — submit button included — on one screen. */
@@ -285,7 +320,11 @@ section[id],footer[id]{scroll-margin-top:88px}
 }
 .legal-link:hover{opacity:.62}
 
+.price-row{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
 .price-row + .price-row{border-top:1px solid var(--border)}
+@media(min-width:640px){
+  .price-row{flex-direction:row;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 24px}
+}
 
 .disclosure summary,.faq-item summary{
   cursor:pointer;list-style:none;font-weight:inherit
@@ -335,8 +374,45 @@ section[id],footer[id]{scroll-margin-top:88px}
   outline:2px solid var(--violet);outline-offset:3px;border-radius:12px
 }
 
+/* ----------------------------------------------------------- телефоны ----
+   Те же блоки, только плотнее: меньше воздуха, крупнее нажимаемые места
+   (минимум 44px по рекомендации Apple и Google) и ничего мельче 12px. */
 @media(max-width:700px){
   .faq-item summary{padding:16px 18px;font-size:.98rem}
   .faq-answer{padding:0 18px 18px}
-  .map-frame{min-height:220px;padding:28px 18px}
+  .map-frame{min-height:200px;padding:24px 18px}
+
+  /* Карточка врача: на всю ширину экрана портрет 4:5 — это полэкрана высотой,
+     поэтому кадр становится квадратным. Лицо остаётся на месте. */
+  .doctor-photo{aspect-ratio:1/1}
+
+  /* «Подробнее» и ссылки в футере — полноценные кнопки под палец. */
+  .disclosure summary{min-height:44px;align-items:center}
+  .footer-legal{gap:0 16px}
+  .footer-legal a,.footer-legal .legal-link{display:inline-flex;align-items:center;min-height:44px}
+  .footer-contacts a{display:inline-flex;align-items:center;min-height:44px}
+  .socials a,.socials img{width:44px;height:44px}
+  .socials{gap:18px}
+
+  /* Окно записи занимает экран целиком: так в него помещается весь список
+     времени, а не два ряда. */
+  .booking-dialog{
+    width:100vw;max-width:100vw;max-height:100svh;height:100svh;
+    border-radius:0;margin:0
+  }
+  .booking-panel{--panel-pad:20px;padding-top:24px}
+  .booking-times{max-height:none;overflow:visible;padding-right:0}
+  .booking-time,.booking-day{min-height:44px}
+  .select-option{min-height:44px}
+  /* Все услуги помещаются целиком — список не обрезается на полпункте. */
+  .select-list{max-height:min(380px,48svh)}
+  .legal-dialog{width:100vw;max-width:100vw}
+}
+
+/* Очень узкие экраны (320px): поля времени в три столбца всё ещё читаются,
+   но воздух между ними надо убрать. */
+@media(max-width:360px){
+  .booking-panel{--panel-pad:16px}
+  .booking-time{padding:10px 2px;font-size:.9rem}
+  .booking-day{min-width:58px;padding:9px 8px}
 }

@@ -28,7 +28,7 @@ const DOCTORS = [
 
 export function Doctors() {
   return (
-    <section id="doctors" className="bg-lavender py-24 md:py-28" aria-labelledby="doctors-title">
+    <section id="doctors" className="bg-lavender py-16 md:py-28" aria-labelledby="doctors-title">
       <div className="mx-auto max-w-6xl px-6 md:px-10">
         <Reveal className="max-w-2xl">
           <span className="inline-flex items-center rounded-full bg-card px-4 py-1.5 text-sm text-muted-foreground">
@@ -42,7 +42,7 @@ export function Doctors() {
           </p>
         </Reveal>
 
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-8 grid md:mt-12 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {DOCTORS.map((doctor, index) => (
             <Reveal key={`${doctor.role}-${index}`}>
               <article className="flex h-full flex-col overflow-hidden rounded-3xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:border-violet/40 hover:shadow-[0_24px_60px_-30px_rgba(8,9,9,0.35)]">

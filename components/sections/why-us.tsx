@@ -37,7 +37,7 @@ const POINTS = [
 
 export function WhyUs() {
   return (
-    <section id="why" className="bg-card py-24 md:py-28" aria-labelledby="why-title">
+    <section id="why" className="bg-card py-16 md:py-28" aria-labelledby="why-title">
       <div className="mx-auto max-w-6xl px-6 md:px-10">
         <Reveal className="max-w-2xl">
           <span className="inline-flex items-center rounded-full bg-lavender px-4 py-1.5 text-sm text-muted-foreground">
@@ -48,7 +48,7 @@ export function WhyUs() {
           </h2>
         </Reveal>
 
-        <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="mt-8 grid md:mt-12 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {POINTS.map(({ icon: Icon, title, text }) => (
             <Reveal key={title}>
               <li className="flex h-full gap-4 rounded-3xl border border-border bg-lavender p-6 transition-colors duration-300 hover:border-violet/40">

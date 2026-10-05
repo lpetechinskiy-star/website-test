@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 
 import { LegalLink } from '@/components/legal/legal-provider';
 import { track } from '@/lib/analytics';
+import { SelectField } from '@/components/ui/select-field';
 import { cn } from '@/lib/utils';
 
 const SERVICES = [
@@ -260,19 +261,18 @@ export function BookingDialog({ open, onClose }: { open: boolean; onClose: () =>
               </label>
             </div>
 
-            <label className="mt-4 block">
-              <span className="mb-2 block text-sm text-muted-foreground">Услуга</span>
-              <select
+            <div className="mt-4">
+              <span id="booking-service-label" className="mb-2 block text-sm text-muted-foreground">
+                Услуга
+              </span>
+              <SelectField
                 id="booking-service"
+                label="Услуга"
                 value={service}
-                onChange={(event) => setService(event.target.value)}
-                className="booking-field"
-              >
-                {SERVICES.map((item) => (
-                  <option key={item}>{item}</option>
-                ))}
-              </select>
-            </label>
+                options={SERVICES}
+                onChange={setService}
+              />
+            </div>
 
             <div className="mt-6">
               <span className="mb-2 block text-sm text-muted-foreground">День</span>

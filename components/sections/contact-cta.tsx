@@ -16,7 +16,7 @@ const SPARKS = [
 
 export function ContactCta() {
   return (
-    <section className="bg-card py-24 md:py-28">
+    <section className="bg-card py-16 md:py-28">
       <div className="mx-auto max-w-6xl px-6 md:px-10">
         <Reveal>
           <div className="cta-card relative overflow-hidden rounded-[2rem] bg-ink px-7 py-14 md:px-14 md:py-16">
@@ -56,7 +56,7 @@ export function ContactCta() {
                   лишних процедур.
                 </p>
 
-                <BookingButton className="mt-9 bg-lavender px-9 py-4 text-base text-ink hover:bg-white focus-visible:ring-offset-ink">
+                <BookingButton className="mt-9 w-full bg-lavender px-9 py-4 text-base text-ink hover:bg-white focus-visible:ring-offset-ink sm:w-auto">
                   Записаться на приём
                 </BookingButton>
               </div>
@@ -90,7 +90,7 @@ export function ContactCta() {
               </div>
             </div>
 
-            <dl className="relative mt-14 grid gap-4 text-left sm:grid-cols-3">
+            <dl className="relative mt-9 grid md:mt-14 gap-4 text-left sm:grid-cols-3">
               <div className="rounded-2xl border border-lavender/15 p-5 transition-colors duration-300 hover:border-lavender/40">
                 <dt className="flex items-center gap-2 text-sm text-lavender/60">
                   <Phone className="size-4" aria-hidden />
@@ -100,7 +100,7 @@ export function ContactCta() {
                   <TrackedLink
                     href={CLINIC.phoneHref}
                     event="phone_click"
-                    className="text-lavender underline-offset-4 hover:underline"
+                    className="inline-flex min-h-11 items-center text-lavender underline-offset-4 hover:underline"
                     aria-label={`Позвонить по номеру ${CLINIC.phone}`}
                   >
                     {CLINIC.phone}
@@ -112,7 +112,7 @@ export function ContactCta() {
                     event="messenger_click"
                     external
                     aria-label="Написать в WhatsApp"
-                    className="flex size-9 items-center justify-center rounded-full border border-lavender/20 text-lavender/80 transition-colors hover:border-lavender/50 hover:text-lavender"
+                    className="flex size-11 items-center justify-center rounded-full border border-lavender/20 text-lavender/80 transition-colors hover:border-lavender/50 hover:text-lavender"
                   >
                     <MessageCircle className="size-4" aria-hidden />
                   </TrackedLink>
@@ -121,7 +121,7 @@ export function ContactCta() {
                     event="messenger_click"
                     external
                     aria-label="Написать в Telegram"
-                    className="flex size-9 items-center justify-center rounded-full border border-lavender/20 text-lavender/80 transition-colors hover:border-lavender/50 hover:text-lavender"
+                    className="flex size-11 items-center justify-center rounded-full border border-lavender/20 text-lavender/80 transition-colors hover:border-lavender/50 hover:text-lavender"
                   >
                     <Send className="size-4" aria-hidden />
                   </TrackedLink>
@@ -139,7 +139,7 @@ export function ContactCta() {
                     href={CLINIC.routeUrl}
                     event="route_click"
                     external
-                    className="inline-flex items-center gap-2 rounded-full border border-lavender/25 px-4 py-2 text-sm text-lavender transition-colors hover:border-lavender/60 hover:bg-lavender/10"
+                    className="inline-flex min-h-11 items-center gap-2 rounded-full border border-lavender/25 px-5 py-2 text-sm text-lavender transition-colors hover:border-lavender/60 hover:bg-lavender/10"
                   >
                     <Navigation className="size-4" aria-hidden />
                     Построить маршрут

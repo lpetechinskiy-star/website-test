@@ -20,7 +20,7 @@ const POINTS = [
 
 export function About() {
   return (
-    <section id="about" className="relative overflow-hidden bg-card py-24 md:py-32">
+    <section id="about" className="relative overflow-hidden bg-card py-16 md:py-32">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"

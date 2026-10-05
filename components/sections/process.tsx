@@ -21,7 +21,7 @@ const STEPS = [
 
 export function Process() {
   return (
-    <section id="process" className="bg-lavender py-24 md:py-32">
+    <section id="process" className="bg-lavender py-16 md:py-32">
       <div className="mx-auto max-w-6xl px-6 md:px-10">
         <Reveal className="max-w-2xl">
           <span className="inline-flex items-center rounded-full bg-card px-4 py-1.5 text-sm text-muted-foreground">
@@ -32,7 +32,7 @@ export function Process() {
           </h2>
         </Reveal>
 
-        <ol className="mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+        <ol className="mt-9 grid md:mt-14 gap-5 md:grid-cols-2 lg:grid-cols-4">
           {STEPS.map((step, index) => (
             <Reveal key={step.title}>
               <li className="group relative h-full list-none overflow-hidden rounded-3xl border border-border bg-card p-7 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_-30px_rgba(8,9,9,0.4)]">

@@ -33,7 +33,7 @@ const QUESTIONS = [
 
 export function Faq() {
   return (
-    <section id="faq" className="bg-lavender py-24 md:py-28" aria-labelledby="faq-title">
+    <section id="faq" className="bg-lavender py-16 md:py-28" aria-labelledby="faq-title">
       <div className="mx-auto max-w-4xl px-6 md:px-10">
         <Reveal>
           <span className="inline-flex items-center rounded-full bg-card px-4 py-1.5 text-sm text-muted-foreground">

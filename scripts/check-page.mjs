@@ -238,6 +238,51 @@ const pupilOffsets = (page) => page.evaluate(() =>
   });
   check(fits, 'the submit button fits inside the window without scrolling');
 
+  // The service list is ours, not the browser's: it opens, picks with the mouse
+  // and with the keyboard, and Esc folds the list without closing the window.
+  await page.click('#booking-service');
+  await page.waitForTimeout(350);
+  const list = await page.evaluate(() => {
+    const element = document.querySelector('.select-list');
+    if (!element) return null;
+    const box = element.getBoundingClientRect();
+    const dialog = document.querySelector('dialog').getBoundingClientRect();
+    const actions = document.querySelector('.booking-actions').getBoundingClientRect();
+    const options = [...element.querySelectorAll('[role="option"]')];
+    return {
+      options: options.length,
+      allVisible: options.every((o) => o.getBoundingClientRect().bottom <= box.bottom + 1),
+      insideDialog: box.left >= dialog.left - 1 && box.right <= dialog.right + 1,
+      // Нижний край списка не прячется под липкой кнопкой.
+      aboveActions: box.bottom <= actions.top + 1 || document.elementFromPoint(box.left + 24, box.bottom - 10)?.closest('.select-list') !== null,
+      native: !!document.querySelector('dialog select'),
+    };
+  });
+  check(list !== null && list.options === 7 && list.allVisible && list.insideDialog && list.aboveActions && !list.native,
+    'the service list opens as our own panel with every option in view', JSON.stringify(list));
+
+  await page.locator('.select-option').nth(2).click();
+  await page.waitForTimeout(250);
+  check((await page.textContent('#booking-service'))?.trim() === 'Гигиена и отбеливание',
+    'picking an option with the mouse sets the service');
+
+  await page.focus('#booking-service');
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(200);
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(200);
+  check((await page.textContent('#booking-service'))?.trim() === 'Элайнеры и брекеты',
+    'the list is usable from the keyboard alone');
+
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(200);
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(250);
+  check(await page.evaluate(() => !document.querySelector('.select-list') && !!document.querySelector('dialog')?.open),
+    'Esc folds the list and leaves the booking window open');
+
   await page.getByRole('button', { name: 'Записаться', exact: true }).last().click();
   await page.waitForTimeout(300);
   const complaints = await page.evaluate(() => [...document.querySelectorAll('.booking-error')].map((e) => e.textContent));
@@ -258,7 +303,8 @@ const pupilOffsets = (page) => page.evaluate(() =>
   await page.getByRole('button', { name: 'Записаться', exact: true }).last().click();
   await page.waitForTimeout(400);
   const summary = await page.evaluate(() => document.querySelector('dialog')?.textContent ?? '');
-  check(summary.includes('Спасибо! Заявка отправлена') && summary.includes('+7 (900) 123-45-67'),
+  check(summary.includes('Спасибо! Заявка отправлена') && summary.includes('+7 (900) 123-45-67')
+    && summary.includes('Элайнеры и брекеты'),
     'the filled form reaches the confirmation with the entered details');
   check(await page.evaluate(() => (window.dataLayer ?? []).some((e) => e.event === 'booking_submit')),
     'the booking events reach the analytics layer');
@@ -346,6 +392,67 @@ for (const width of [700, 390, 320]) {
     [...document.querySelectorAll('section article, section figure, section li, .price-row, .map-frame')]
       .filter((el) => el.getBoundingClientRect().right > window.innerWidth + 1).length);
   check(spills === 0, `mobile ${width}px keeps every card inside the screen`, `${spills} spilling`);
+
+  // Nothing tappable may be smaller than a fingertip, and nothing readable
+  // smaller than 12px.
+  const touch = await page.evaluate(() => {
+    const small = [];
+    const tiny = [];
+    for (const el of document.querySelectorAll('a, button, summary, input, select, textarea')) {
+      const box = el.getBoundingClientRect();
+      if (box.width === 0 && box.height === 0) continue;
+      if (box.height < 40) small.push(`${el.tagName.toLowerCase()} "${(el.textContent ?? '').trim().slice(0, 18)}" ${Math.round(box.height)}px`);
+    }
+    for (const el of document.querySelectorAll('p, li, span, a, dd, dt, h3')) {
+      if (el.children.length || !(el.textContent ?? '').trim()) continue;
+      if (el.closest('[aria-hidden="true"], svg')) continue;
+      const size = parseFloat(getComputedStyle(el).fontSize);
+      if (size && size < 12) tiny.push(`${Math.round(size)}px "${el.textContent.trim().slice(0, 18)}"`);
+    }
+    return { small: [...new Set(small)], tiny: [...new Set(tiny)] };
+  });
+  check(touch.small.length === 0, `mobile ${width}px gives every control a 40px+ tap target`, touch.small.slice(0, 3).join(' / '));
+  check(touch.tiny.length === 0, `mobile ${width}px keeps all copy at 12px or more`, touch.tiny.slice(0, 3).join(' / '));
+
+  // The booking window on a phone: fills the screen, and the service list fits.
+  await page.getByRole('button', { name: /Записаться на приём/ }).first().click();
+  await page.waitForTimeout(500);
+  await page.click('#booking-service');
+  await page.waitForTimeout(350);
+  const sheet = await page.evaluate(() => {
+    const dialog = document.querySelector('dialog');
+    const box = dialog.getBoundingClientRect();
+    const element = document.querySelector('.select-list');
+    const list = element?.getBoundingClientRect();
+    return {
+      full: box.width >= window.innerWidth - 1,
+      list: !!element,
+      listInside: !!list && list.left >= -1 && list.right <= window.innerWidth + 1 && list.bottom <= window.innerHeight + 1,
+      allOptions: !!element && [...element.querySelectorAll('[role="option"]')].every((o) => o.getBoundingClientRect().bottom <= list.bottom + 1),
+    };
+  });
+  check(sheet.full && sheet.list && sheet.listInside && sheet.allOptions,
+    `mobile ${width}px opens the booking window full-screen with the whole list`, JSON.stringify(sheet));
+
+  await page.locator('.select-option').nth(1).click();
+  await page.waitForTimeout(200);
+  const canSubmit = await page.evaluate(() => {
+    const dialog = document.querySelector('dialog');
+    dialog.scrollTop = dialog.scrollHeight;
+    const submit = [...dialog.querySelectorAll('button')].find((b) => b.type === 'submit');
+    const box = submit.getBoundingClientRect();
+    const times = [...document.querySelectorAll('.booking-time')];
+    return {
+      submitOnScreen: box.bottom <= window.innerHeight + 1 && box.top >= 0,
+      slots: times.length,
+      // Все слоты доступны, а не заперты в 148px окошке, как на десктопе.
+      lastSlotReachable: times[times.length - 1].getBoundingClientRect().height >= 40,
+    };
+  });
+  check(canSubmit.submitOnScreen && canSubmit.slots === 24 && canSubmit.lastSlotReachable,
+    `mobile ${width}px reaches the time slots and the submit button`, JSON.stringify(canSubmit));
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(250);
 
   await page.screenshot({ path: path.join(SHOTS, `mobile-${width}.png`), fullPage: true });
   check(problems.length === 0, `mobile ${width}px console and network are clean`, problems.slice(0, 2).join(' | '));

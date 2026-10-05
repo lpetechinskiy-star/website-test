@@ -38,7 +38,7 @@ const SERVICES = [
 
 export function Services() {
   return (
-    <section id="services" className="bg-lavender py-24 md:py-32">
+    <section id="services" className="bg-lavender py-16 md:py-32">
       <div className="mx-auto max-w-6xl px-6 md:px-10">
         <Reveal className="max-w-2xl">
           <span className="inline-flex items-center rounded-full bg-card px-4 py-1.5 text-sm text-muted-foreground">
@@ -53,7 +53,7 @@ export function Services() {
           </p>
         </Reveal>
 
-        <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-9 grid md:mt-14 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {SERVICES.map(({ icon: Icon, title, text }) => (
             <Reveal key={title}>
               <SpotlightCard className="h-full">

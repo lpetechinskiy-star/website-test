@@ -56,7 +56,7 @@ export function SiteHeader() {
           <a
             href="#top"
             aria-label="В начало страницы"
-            className="block w-[104px] text-ink md:w-[124px] [&>svg]:h-auto [&>svg]:w-full"
+            className="flex min-h-11 w-[104px] items-center text-ink md:w-[124px] [&>svg]:h-auto [&>svg]:w-full"
           >
             <BrandLogo />
           </a>

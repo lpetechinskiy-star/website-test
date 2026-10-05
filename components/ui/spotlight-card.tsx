@@ -31,7 +31,7 @@ export function SpotlightCard({
       ref={ref}
       onPointerMove={move}
       className={cn(
-        'group relative overflow-hidden rounded-3xl border border-border bg-card p-7',
+        'group relative overflow-hidden rounded-3xl border border-border bg-card p-6 sm:p-7',
         'transition-all duration-300 hover:-translate-y-1 hover:border-violet/40 hover:shadow-[0_24px_60px_-28px_rgba(111,91,208,0.55)]',
         className,
       )}

@@ -14,8 +14,8 @@ const TRUST = [
 export function Hero() {
   return (
     <section id="top">
-      <BackgroundPaths className="pt-28 pb-16 md:pt-36 md:pb-24">
-        <div className="grid items-center gap-10 lg:grid-cols-[1.02fr_0.98fr] lg:gap-6">
+      <BackgroundPaths className="pt-24 pb-10 md:pt-36 md:pb-24">
+        <div className="grid items-center gap-6 md:gap-10 lg:grid-cols-[1.02fr_0.98fr] lg:gap-6">
           <div className="hero-copy text-center lg:text-left">
             <span className="inline-flex items-center rounded-full border border-border bg-card px-4 py-1.5 text-sm text-muted-foreground">
               стоматология для всей семьи
@@ -27,13 +27,13 @@ export function Hero() {
               без страха
             </h1>
 
-            <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-muted-foreground lg:mx-0 md:text-xl">
+            <p className="mx-auto mt-4 max-w-xl text-[1.05rem] leading-relaxed text-muted-foreground md:mt-5 md:text-xl lg:mx-0">
               Спокойный приём, честный план лечения и результат, который хочется
               показывать.
             </p>
 
-            <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row lg:justify-start justify-center">
-              <BookingButton className="px-8 py-4 text-base shadow-lg shadow-ink/15">
+            <div className="mt-7 flex flex-col items-stretch gap-3 text-center sm:flex-row sm:items-center sm:justify-center lg:justify-start">
+              <BookingButton className="w-full px-8 py-4 text-base shadow-lg shadow-ink/15 sm:w-auto">
                 Записаться на приём
                 <ArrowRight className="size-4" aria-hidden />
               </BookingButton>
@@ -41,13 +41,13 @@ export function Hero() {
               <Button
                 asChild
                 variant="outline"
-                className="h-auto rounded-2xl border-ink/15 bg-card px-8 py-4 text-base font-medium text-ink transition-transform duration-200 hover:bg-card hover:-translate-y-0.5 active:translate-y-0"
+                className="h-auto w-full rounded-2xl border-ink/15 bg-card px-8 py-4 text-base font-medium text-ink transition-transform duration-200 hover:bg-card hover:-translate-y-0.5 active:translate-y-0 sm:w-auto"
               >
                 <a href="#services">Посмотреть услуги</a>
               </Button>
             </div>
 
-            <ul className="mt-10 flex flex-wrap items-center justify-center gap-x-7 gap-y-3 text-sm text-muted-foreground lg:justify-start">
+            <ul className="mt-7 flex flex-wrap items-center justify-center gap-x-6 gap-y-2.5 text-sm text-muted-foreground md:mt-10 md:gap-x-7 lg:justify-start">
               {TRUST.map(({ icon: Icon, label }) => (
                 <li key={label} className="flex items-center gap-2">
                   <Icon className="size-4 text-violet" aria-hidden />
