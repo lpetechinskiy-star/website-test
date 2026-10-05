@@ -1,4 +1,5 @@
 import { BookingProvider } from '@/components/booking/booking-provider';
+import { LegalProvider } from '@/components/legal/legal-provider';
 import { About } from '@/components/sections/about';
 import { ContactCta } from '@/components/sections/contact-cta';
 import { Doctors } from '@/components/sections/doctors';
@@ -16,23 +17,25 @@ import { SiteHeader } from '@/components/site-header';
 
 export default function Home() {
   return (
-    <BookingProvider>
-      <SiteHeader />
-      <main>
-        <Hero />
-        <Marquee />
-        <Services />
-        <WhyUs />
-        <Doctors />
-        <Prices />
-        <Technologies />
-        <About />
-        <Process />
-        <Reviews />
-        <Faq />
-        <ContactCta />
-      </main>
-      <SiteFooter />
-    </BookingProvider>
+    <LegalProvider>
+      <BookingProvider>
+        <SiteHeader />
+        <main>
+          <Hero />
+          <Marquee />
+          <Services />
+          <WhyUs />
+          <Doctors />
+          <Prices />
+          <Technologies />
+          <About />
+          <Process />
+          <Reviews />
+          <Faq />
+          <ContactCta />
+        </main>
+        <SiteFooter />
+      </BookingProvider>
+    </LegalProvider>
   );
 }

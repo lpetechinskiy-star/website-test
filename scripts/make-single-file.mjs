@@ -42,9 +42,12 @@ let script = bundle.outputFiles[0].text;
 for (const icon of ['linkedin.svg', 'instagram.svg', 'tiktok.svg', 'logo.svg']) {
   script = script.replaceAll(`/${icon}`, dataUri(path.join(outDir, icon), 'image/svg+xml'));
 }
-for (const page of ['privacy.html', 'consent.html']) {
-  // Документы тоже уезжают внутрь файла и открываются в новой вкладке.
-  script = script.replaceAll(`"${page}"`, `"${dataUri(path.join(outDir, page), 'text/html')}"`);
+for (const photo of ['doctor-1.webp', 'doctor-2.webp', 'doctor-3.webp']) {
+  // Фотографии врачей тоже уезжают внутрь файла.
+  script = script.replaceAll(
+    `/doctors/${photo}`,
+    dataUri(path.join(outDir, 'doctors', photo), 'image/webp'),
+  );
 }
 
 // 4. Заголовок, описание и разметку для поисковиков берём из статической сборки.

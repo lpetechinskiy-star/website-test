@@ -3,6 +3,7 @@
 import { Check, Clock, Phone, User, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 
+import { LegalLink } from '@/components/legal/legal-provider';
 import { track } from '@/lib/analytics';
 import { cn } from '@/lib/utils';
 
@@ -336,7 +337,7 @@ export function BookingDialog({ open, onClose }: { open: boolean; onClose: () =>
               />
               <span>
                 Согласен на обработку персональных данных и принимаю{' '}
-                <a href="privacy.html" target="_blank" rel="noreferrer">политику конфиденциальности</a>.
+                <LegalLink document="privacy">политику конфиденциальности</LegalLink>.
               </span>
             </label>
             {errors.consent ? <span className="booking-error">{errors.consent}</span> : null}

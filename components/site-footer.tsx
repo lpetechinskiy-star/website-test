@@ -1,4 +1,5 @@
 import BrandLogo from '@/app/brand-logo';
+import { LegalLink } from '@/components/legal/legal-provider';
 import { TrackedLink } from '@/components/ui/tracked-link';
 import { CLINIC } from '@/lib/clinic';
 
@@ -61,11 +62,11 @@ export function SiteFooter() {
           ))}
         </div>
 
-        {/* ЗАПОЛНИТЕ: замените тексты в public/privacy.html и public/consent.html
-            на документы клиники. */}
+        {/* ЗАПОЛНИТЕ: тексты документов — в lib/legal.ts (реквизиты оператора,
+            срок хранения, адрес для обращений). */}
         <div className="footer-legal">
-          <a href="privacy.html">Политика конфиденциальности</a>
-          <a href="consent.html">Согласие на обработку данных</a>
+          <LegalLink document="privacy">Политика конфиденциальности</LegalLink>
+          <LegalLink document="consent">Согласие на обработку данных</LegalLink>
         </div>
       </div>
     </footer>

@@ -50,7 +50,8 @@ scripts/                генераторы ассетов и провероч�
 - `components/sections/prices.tsx` — прайс;
 - `components/sections/reviews.tsx` — отзывы (сейчас заглушки, а не выдуманные);
 - `components/sections/contact-cta.tsx` — контейнер под карту: вставьте iframe;
-- `public/privacy.html`, `public/consent.html` — тексты документов;
+- `lib/legal.ts` — реквизиты оператора, сроки хранения и адрес для обращений
+  в политике конфиденциальности и согласии (открываются окном из футера);
 - `lib/analytics.ts` — подключение счётчика к событиям `booking_open`,
   `booking_submit`, `phone_click`, `route_click`, `messenger_click`.
 

@@ -184,9 +184,42 @@ const pupilOffsets = (page) => page.evaluate(() =>
   check(await page.evaluate(() => !!document.querySelector('a[href*="yandex.ru/maps"]')),
     'the route button links to a map');
 
-  for (const file of ['privacy.html', 'consent.html']) {
-    const status = await page.evaluate(async (name) => (await fetch(name)).status, file);
-    check(status === 200, `${file} is served`, `HTTP ${status}`);
+  // The doctors' photographs really arrive, not just their boxes.
+  // They are lazy, so bring the section into view and let them decode first.
+  await page.evaluate(() => document.querySelector('#doctors').scrollIntoView({ block: 'center', behavior: 'instant' }));
+  await page.waitForFunction(
+    () => [...document.querySelectorAll('.doctor-photo')].every((i) => i.complete),
+    null, { timeout: 5000 },
+  );
+  const photos = await page.evaluate(() => {
+    const images = [...document.querySelectorAll('.doctor-photo')];
+    return {
+      count: images.length,
+      loaded: images.filter((i) => i.complete && i.naturalWidth > 0).length,
+      labelled: images.filter((i) => (i.alt ?? '').trim().length > 0).length,
+    };
+  });
+  check(photos.count === 3 && photos.loaded === 3 && photos.labelled === 3,
+    'all three doctor photographs load and carry alt text',
+    `${photos.loaded}/${photos.count} loaded`);
+
+  // Both documents open in a window and carry text, not an empty stub.
+  for (const [label, needle] of [
+    ['Политика конфиденциальности', 'персональных данных'],
+    ['Согласие на обработку данных', 'согласие'],
+  ]) {
+    await page.getByRole('button', { name: label }).first().click();
+    await page.waitForTimeout(350);
+    const body = await page.evaluate(() => {
+      const dialog = [...document.querySelectorAll('dialog')].find((d) => d.open);
+      return { open: !!dialog, text: dialog?.textContent ?? '' };
+    });
+    check(body.open && body.text.length > 1200 && body.text.toLowerCase().includes(needle),
+      `«${label}» opens with its text`, `${body.text.length} characters`);
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(300);
+    check(await page.evaluate(() => ![...document.querySelectorAll('dialog')].some((d) => d.open)),
+      `«${label}» closes on Esc`);
   }
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
